@@ -96,7 +96,8 @@ void resetareVizita(GRAF *graf, int numar_noduri) {
     }
 }
 
-void existaDrum(GRAF *graf, int restaurant_inceput, int restaurant_destinatie, STIVA *stiva1, STIVA *stiva2) {
+void existaDrum(GRAF *graf, int restaurant_inceput, int restaurant_destinatie, 
+STIVA *stiva1, STIVA *stiva2) {
     int ajunge = 0;
 
     depthFirstSearch(graf, stiva1, restaurant_inceput);
@@ -105,7 +106,8 @@ void existaDrum(GRAF *graf, int restaurant_inceput, int restaurant_destinatie, S
 
     for (int i = 0; i < stiva2->top; i++) {
         for (int j = 0; j < stiva2->top; j++) {
-            if (stiva1->vector[i] == restaurant_destinatie && stiva2->vector[j] == restaurant_inceput) {
+            if (stiva1->vector[i] == restaurant_destinatie &&
+                stiva2->vector[j] == restaurant_inceput) {
                 ajunge = 1;
                 break;
             }
@@ -113,10 +115,12 @@ void existaDrum(GRAF *graf, int restaurant_inceput, int restaurant_destinatie, S
     }
 
     if (ajunge) {
-        printf("Exista drum intre restaurantele %d si %d\n", restaurant_inceput + 1, restaurant_destinatie + 1);
+        printf("Exista drum intre restaurantele %d si %d\n",
+            restaurant_inceput + 1, restaurant_destinatie + 1);
     }
     else {
-        printf("Nu exista drum intre restaurantele %d si %d\n", restaurant_inceput + 1, restaurant_destinatie + 1);
+        printf("Nu exista drum intre restaurantele %d si %d\n",
+            restaurant_inceput + 1, restaurant_destinatie + 1);
     }
 }
 
