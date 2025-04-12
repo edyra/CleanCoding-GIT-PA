@@ -10,43 +10,47 @@ typedef struct Node {
 /// pentru simplitate, folosim int uri pt a numi restaurantele/locatiile
 /// ex: 1 - restaurantul 1 si tot asa
 
-typedef struct graf {
+typedef struct Graf {
     int numar_restaurante;
-    int *vizitat;
-    struct Node **listaAdiacenta;
+    int *vizitat_nod;
+    struct Node **lista_adiacenta;
 }GRAF;
 
-typedef struct stiva {
+typedef struct Stiva {
     int top;
     int capacitateaStivei;
     int *vector;
 }STIVA;
 
 NODE *creareNod(int v) {
-    NODE *nodNou = malloc(sizeof(NODE));
-    nodNou->restaurant = v;
-    nodNou->next = NULL;
-    return nodNou;
+    NODE *nod_nou = malloc(sizeof(NODE));
+    if (!nod_nou)
+        return NULL;
+
+    nod_nou->restaurant = v;
+    nod_nou->next = NULL;
+    return nod_nou;
 }
 
-void add_edge(GRAF *graf, int src, int dest) {
-    NODE *nodNou = creareNod(dest);
-    nodNou->next = graf->listaAdiacenta[src];
-    graf->listaAdiacenta[src] = nodNou;
-    nodNou = creareNod(src);
-    nodNou->next = graf->listaAdiacenta[dest];
-    graf->listaAdiacenta[dest] = nodNou;
+void adaugareNod(GRAF *graf, int start, int final) {
+    NODE *nod_nou = creareNod(final);
+    nod_nou->next = graf->lista_adiacenta[start];
+    graf->lista_adiacenta[start] = nod_nou;
+
+    nod_nou = creareNod(start);
+    nod_nou->next = graf->lista_adiacenta[final];
+    graf->lista_adiacenta[final] = nod_nou;
 }
 
-GRAF *creareGraf(int v) {
+GRAF *creareGraf(int numar_restaurante) {
     GRAF *graf = malloc(sizeof(GRAF));
-    graf->numar_restaurante = v;
-    graf->listaAdiacenta = malloc(sizeof(NODE *) * v);
-    graf->vizitat = malloc(sizeof(int) * v);
+    graf->numar_restaurante = numar_restaurante;
+    graf->lista_adiacenta = malloc(numar_restaurante * sizeof(NODE *));
+    graf->vizitat_nod = malloc(sizeof(int) * numar_restaurante);
 
-    for (int i = 0; i < v; i++) {
-        graf->listaAdiacenta[i] = NULL;
-        graf->vizitat[i] = 0;
+    for (int i = 0; i < numar_restaurante; i++) {
+        graf->lista_adiacenta[i] = NULL;
+        graf->vizitat_nod[i] = 0;
     }
     return graf;
 }
@@ -60,81 +64,115 @@ STIVA *creareStiva(int capacitate) {
     return stiva;
 }
 
-void push(int pshd, STIVA *stiva) {
+void pushStiva(int valoare, STIVA *stiva) {
     stiva->top = stiva->top + 1;
-    stiva->vector[stiva->top] = pshd;
+    stiva->vector[stiva->top] = valoare;
 }
 
-void depthfirstSearch(GRAF *graf, STIVA *stiva, int v_nr) {
-    NODE *adj_list = graf->listaAdiacenta[v_nr];
-    NODE *aux = adj_list;
-    graf->vizitat[v_nr] = 1;
-    printf("%d ", v_nr);
-    push(v_nr, stiva);
-    while (aux != NULL) {
-        int con_ver = aux->restaurant;
-        if (graf->vizitat[con_ver] == 0)
-            depthfirstSearch(graf, stiva, con_ver);
-        aux = aux->next;
+void depthFirstSearch(GRAF *graf, STIVA *stiva, int nod_actual) {
+    NODE *copie_nod_actual = graf->lista_adiacenta[nod_actual];
+    graf->vizitat_nod[nod_actual] = 1;
+    pushStiva(nod_actual, stiva);
+    while (copie_nod_actual != NULL) {
+        int nod_conectat = copie_nod_actual->restaurant;
+        if (graf->vizitat_nod[nod_conectat] == 0)
+            depthFirstSearch(graf, stiva, nod_conectat);
+        copie_nod_actual = copie_nod_actual->next;
     }
 }
 
-void adaugareMuchii(GRAF *graf, int numar_muchii, int nrv) {
+void adaugareMuchii(GRAF *graf, int numar_muchii, int numar_noduri) {
     int initial, final, i;
-    printf("adauga %d muchii (de la 1 la %d)\n", numar_muchii, nrv);
+    printf("adauga %d muchii (de la 1 la %d)\n", numar_muchii, numar_noduri);
     for (i = 0; i < numar_muchii; i++) {
         scanf("%d%d", &initial, &final);
-        add_edge(graf, initial, final);
+        adaugareNod(graf, initial - 1, final - 1);
     }
 }
 
-void resetareVizita(GRAF *graf, int nrv) {
-    for (int i = 0; i < nrv; i++) {
-        graf->vizitat[i] = 0;
+void resetareVizita(GRAF *graf, int numar_noduri) {
+    for (int i = 0; i < numar_noduri; i++) {
+        graf->vizitat_nod[i] = 0;
     }
 }
 
-int existaDrum(GRAF *graf, int numar_restaurante, STIVA *restaurant_inceput, STIVA *restaurant_destinatie) {
-    int restaurant1, restaurant2;
-    printf("Introduceti doua restaurante (de la 1 la %d): ", numar_restaurante);
-    scanf("%d %d", &restaurant1, &restaurant2);
+void existaDrum(GRAF *graf, int restaurant_inceput, int restaurant_destinatie, STIVA *stiva1, STIVA *stiva2) {
+    int ajunge = 0;
 
-    restaurant_inceput->top = -1;
-    restaurant_destinatie->top = -1;
+    depthFirstSearch(graf, stiva1, restaurant_inceput);
+    resetareVizita(graf, graf->numar_restaurante);
+    depthFirstSearch(graf, stiva2, restaurant_destinatie);
 
-    depthfirstSearch(graf, restaurant_inceput, restaurant1 - 1);
-    resetareVizita(graf, numar_restaurante);
-    depthfirstSearch(graf, restaurant_destinatie, restaurant2 - 1);
-
-    for (int i = 0; i <= restaurant_inceput->top; i++) {
-        for (int j = 0; j <= restaurant_destinatie->top; j++) {
-            if (restaurant_inceput->vector[i] == restaurant_destinatie->vector[j])
-                return 1; // exista drum intre cele doua restaurante
+    for (int i = 0; i < stiva2->top; i++) {
+        for (int j = 0; j < stiva2->top; j++) {
+            if (stiva1->vector[i] == restaurant_destinatie && stiva2->vector[j] == restaurant_inceput) {
+                ajunge = 1;
+                break;
+            }
         }
     }
-    return 0; //nu exista drum intre cele doua restaurante
+
+    if (ajunge) {
+        printf("Exista drum intre restaurantele %d si %d\n", restaurant_inceput + 1, restaurant_destinatie + 1);
+    }
+    else {
+        printf("Nu exista drum intre restaurantele %d si %d\n", restaurant_inceput + 1, restaurant_destinatie + 1);
+    }
+}
+
+void verificareDrum(GRAF *graf, STIVA *stiva1, STIVA *stiva2) {
+    // 0 sau 1 daca poate fi sau nu ajuns
+    int *noduri_verificate = calloc(graf->numar_restaurante, sizeof(int));
+    if (!noduri_verificate) {
+        printf("eroare!");
+        return;
+    }
+    for (int i = 0; i < graf->numar_restaurante; i++) {
+        // aici i tine loc de numar adica de restaurant
+        for (int j = 0; j < graf->numar_restaurante; j++) {
+            stiva1->top = -1;
+            depthFirstSearch(graf, stiva1, i);
+            resetareVizita(graf, graf->numar_restaurante);
+            depthFirstSearch(graf, stiva2, j);
+
+            for (int m = 0; m < graf->numar_restaurante; m++){
+                for (int n = 0; n < graf->numar_restaurante; n++){
+                    if ((stiva1->vector[n] == m) && (stiva2->vector[m] == n))
+                        noduri_verificate[n] = 1;
+                }
+            }
+        }
+    }
 }
 
 int main() {
-    int numar_varfuri;
-    int numar_muchii;
-    int src, dest;
-    int i;
-    int vortex_1;
-    int virtex_2;
-    int ans;
+    int numar_restaurante, numar_drumuri;
+    int restaurant_inceput, restaurant_destinatie;
+    printf("Cate restaurante sunt?");
+    scanf("%d", &numar_restaurante);
 
-    printf("cate noduri are graful?");
-    scanf("%d", &numar_varfuri);
+    printf("Cate drumuri sunt?");
+    scanf("%d", &numar_drumuri);
 
-    printf("cate muchii are graful?");
-    scanf("%d", &numar_muchii);
+    GRAF *graf = creareGraf(numar_restaurante);
+    STIVA *stiva1 = creareStiva(2 * numar_restaurante);
+    STIVA *stiva2 = creareStiva(2 * numar_restaurante);
 
-    GRAF *graf = creareGraf(numar_varfuri);
-    STIVA *stiva1 = creareStiva(2 * numar_varfuri);
-    STIVA *stiva2 = creareStiva(2 * numar_varfuri);
+    adaugareMuchii(graf, numar_drumuri, numar_restaurante);
+    printf("Introduceti primul restaurant (1-%d): ", numar_restaurante);
+    scanf("%d",&restaurant_inceput);
+    printf("Introduceti restaurantul destinatie (1-%d): ", numar_restaurante);
+    scanf("%d",&restaurant_destinatie);
 
-    insert_edges(graf, numar_muchii, numar_varfuri);
+    existaDrum(graf, restaurant_inceput - 1, restaurant_destinatie - 1, stiva1, stiva2);
 
-    canbe(graf, numar_varfuri, stiva1, stiva2);
+    free(stiva1->vector);
+    free(stiva1);
+    free(stiva2->vector);
+    free(stiva2);
+    free(graf->vizitat_nod);
+    free(graf->lista_adiacenta);
+    free(graf);
+
+    return 0;
 }
